@@ -104,7 +104,7 @@ string Calculator::to_rpn(string input) {
             part << c;
             parts.push_back(part.str());
             part.str("");
-        } else if (c == ' ' || c == '\t') {
+        } else if (c == ' ' || c == '\t' || c == ',') {
             if (!part.str().empty()) {
                 parts.push_back(part.str());
                 part.str("");
@@ -113,7 +113,9 @@ string Calculator::to_rpn(string input) {
             part << c;
         }
     }
-    parts.push_back(part.str());
+    if (!part.str().empty()) {
+        parts.push_back(part.str());
+    }
 
     for (string part : parts) {
         if (is_number(part)) {
