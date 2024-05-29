@@ -4,14 +4,18 @@
 
 using namespace std;
 
-double Times::operate(stack<double>& stack) {
+void Times::operate(stack<double>& stack) {
     double a = stack.top();
     stack.pop();
     double b = stack.top();
     stack.pop();
-    return a * b;
+    stack.push(a * b);
 }
 
 int Times::priority() {
     return 1;
+}
+
+string Times::to_string() {
+    return "*";
 }

@@ -4,7 +4,7 @@
 
 using namespace std;
 
-double DividedBy::operate(stack<double>& stack) {
+void DividedBy::operate(stack<double>& stack) {
     double a = stack.top();
     stack.pop();
     double b = stack.top();
@@ -12,9 +12,13 @@ double DividedBy::operate(stack<double>& stack) {
     if (a == 0) {
         throw "Error: division by zero!";
     }
-    return b / a;
+    stack.push(b / a);
 }
 
 int DividedBy::priority() {
     return 1;
+}
+
+string DividedBy::to_string() {
+    return "/";
 }

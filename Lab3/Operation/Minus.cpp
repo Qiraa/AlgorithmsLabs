@@ -4,14 +4,18 @@
 
 using namespace std;
 
-double Minus::operate(stack<double>& stack) {
+void Minus::operate(stack<double>& stack) {
     double a = stack.top();
     stack.pop();
     double b = stack.top();
     stack.pop();
-    return b - a;
+    stack.push(b - a);
 }
 
 int Minus::priority() {
     return 0;
+}
+
+string Minus::to_string() {
+    return "-";
 }

@@ -4,14 +4,18 @@
 
 using namespace std;
 
-double Plus::operate(stack<double>& stack) {
+void Plus::operate(stack<double>& stack) {
     double a = stack.top();
     stack.pop();
     double b = stack.top();
     stack.pop();
-    return a + b;
+    stack.push(a + b);
 }
 
 int Plus::priority() {
     return 0;
+}
+
+string Plus::to_string() {
+    return "+";
 }

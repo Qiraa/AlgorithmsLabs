@@ -4,6 +4,8 @@
 #include "Operation/Minus.h"
 #include "Operation/Times.h"
 #include "Operation/DividedBy.h"
+#include "Operation/JustNumber.h"
+#include "Token.h"
 #include <iostream>
 #include <stack>
 #include <vector>
@@ -89,74 +91,112 @@ bool is_number(string part) {
     return true;
 }
 
-string Calculator::to_rpn(string input) {
-    stringstream output;
-    stack<string> stack;
-    vector<string> parts;
+Token* to_token(string str) {
+    if (is_number(str)) {
+        return new Token(Number, str);
+    } else if (str == "(") {
+        return new Token(OpeningBracket, str);
+    } else if (str == ")") {
+        return new Token(ClosingBracket, str);
+    } else {
+        return new Token(Operator, str);
+    }
+}
 
-    stringstream part;
+vector<Token*> tokenize(string input) {
+    vector<Token*> result;
+    stringstream token;
+
     for (char c: input) {
-        if (c == '(' || c == ')') {
-            if (!part.str().empty()) {
-                parts.push_back(part.str());
-                part.str("");
+        switch (c) {
+        case ' ':
+        case ',':
+            if (!token.str().empty()) {
+                result.push_back(to_token(token.str()));
+                token.str("");
             }
-            part << c;
-            parts.push_back(part.str());
-            part.str("");
-        } else if (c == ' ' || c == '\t' || c == ',') {
-            if (!part.str().empty()) {
-                parts.push_back(part.str());
-                part.str("");
+            break;
+        case '(':
+            if (!token.str().empty()) {
+                result.push_back(to_token(token.str()));
+                token.str("");
             }
-        } else {
-            part << c;
+            result.push_back(new Token(OpeningBracket, "("));
+            break;
+        case ')':
+            if (!token.str().empty()) {
+                result.push_back(to_token(token.str()));
+                token.str("");
+            }
+            result.push_back(new Token(ClosingBracket, ")"));
+            break;
+        default:
+            token << c;
+            break;
         }
     }
-    if (!part.str().empty()) {
-        parts.push_back(part.str());
+    if (!token.str().empty()) {
+        result.push_back(to_token(token.str()));
+        token.str("");
     }
 
-    for (string part : parts) {
-        if (is_number(part)) {
-            output << " " << part;
-        } else {
-            if (stack.empty()) {
-                stack.push(part);
-            } else if (part == ")") {
-                while (!stack.empty()) {
-                    string op = stack.top();
-                    stack.pop();
-                    if (op == "(") {
-                        break;
-                    }
-                    output << " " << op;
+    return result;
+}
+
+vector<Operation*> Calculator::to_rpn(vector<Token*> tokens) {
+    vector<Operation*> result;
+    stack<Token*> stack;
+
+    for (auto token: tokens) {
+        TokenType type = token->getType();
+        switch (type) {
+        case Number:
+            result.push_back(new JustNumber(parse_number(token->getValue())));
+            break;
+        case OpeningBracket:
+            stack.push(token);
+            break;
+        case ClosingBracket:
+            while (!stack.empty()) {
+                Token* top = stack.top();
+                stack.pop();
+                if (top->getType() == OpeningBracket) {
+                    break;
+                } else if (top->getType() == Number) {
+                    result.push_back(new JustNumber(parse_number(top->getValue())));
+                } else if (top->getType() == Operator) {
+                    result.push_back(this->operations[top->getValue()]);
                 }
-            } else if (part == "(") {
-                stack.push(part);
-            } else {
-                string top = stack.top();
-                if (top != "(") {                    
-                    Operation* last_operation = this->operations[top];
-                    Operation* current_operation = this->operations[part];
+            }
+            break;
+        case Operator:
+            if (!stack.empty()) {
+                Token* top = stack.top();
+                if (top->getType() != OpeningBracket) {
+                    Operation* last_operation = this->operations[top->getValue()];
+                    Operation* current_operation = this->operations[token->getValue()];
                     if (current_operation->priority() <= last_operation->priority()) {
-                        output << " " << top;
+                        result.push_back(last_operation);
                         stack.pop();
                     }
                 }
-                stack.push(part);
             }
+            stack.push(token);
+            break;
         }
     }
 
     while (!stack.empty()) {
-        output << " ";
-        string op = stack.top();
+        Token* token = stack.top();
         stack.pop();
-        output << op;
+        if (token->getType() == Number) {
+            result.push_back(new JustNumber(parse_number(token->getValue())));
+        } else if (token->getType() == Operator) {
+            result.push_back(this->operations[token->getValue()]);
+        }
     }
 
-    return trim(output.str()); 
+    return result;
 }
 
 Calculator::Calculator() {
@@ -177,22 +217,10 @@ void Calculator::registrate(string name, Operation* operation)
 
 double Calculator::evaluate(string expression) {
     stack<double> stack;
-    istringstream stream(to_rpn(expression));
-    while (!stream.eof()) {
-        string part;
-        stream >> part;
-        if (is_number(part)) {
-            double number = parse_number(part);
-            stack.push(number);
-        } else {
-            Operation* operation = this->operations[part];
-            if (operation == nullptr) {
-                throw "Unknown operation " + part;
-            }
-            double result = operation->operate(stack);
-            stack.push(result);
-        }
+    vector<Token*> tokens = tokenize(expression);
+    vector<Operation*> operations = this->to_rpn(tokens);
+    for (Operation* operation: operations) {
+        operation->operate(stack);
     }
-
     return stack.top();
 }

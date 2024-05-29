@@ -1,14 +1,16 @@
 #include "Operation/Operation.h"
+#include "Token.h"
 #include <string>
 #include <map>
+#include <vector>
 
 using namespace std;
 
 class Calculator {
     map<string, Operation*> operations;
-    string to_rpn(string input);
+    vector<Operation*> to_rpn(vector<Token*> tokens);
     public:
     Calculator();
     void registrate(string name, Operation* operation);
-    double evaluate(std::string expression);
+    double evaluate(string expression);
 };
