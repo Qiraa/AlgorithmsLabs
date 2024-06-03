@@ -18,7 +18,7 @@ unordered_map<long, Edge> Dijkstra::findShortestPath(
   }
   distances[from.id] = 0.0;
 
-  while (true) {
+  while (processed.size() <= incidence_map.size()) {
     long closest_v = -1; 
     double min_distance = numeric_limits<double>::infinity();
     for (auto pair: incidence_map) {
